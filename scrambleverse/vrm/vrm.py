@@ -1,16 +1,16 @@
-from ..glb import GLBReader, GLBJsonChunk, Image
+from ..gltf import GLBReader
 from .vrm0_meta import VRM0Meta
 from .vrm1_meta import VRM1Meta
 
 
-class VRMJsonChunk(GLBJsonChunk):
+class VRMReader(GLBReader):
     @property
     def VRM(self):
-        return self.get("extensions", {}).get("VRM", None)
+        return self._gltf_data.get("extensions", {}).get("VRM", None)
 
     @property
     def VRMC_vrm(self):
-        return self.get("extensions", {}).get("VRMC_vrm", None)
+        return self._gltf_data.get("extensions", {}).get("VRMC_vrm", None)
 
     @property
     def vrm0meta(self):
@@ -24,21 +24,14 @@ class VRMJsonChunk(GLBJsonChunk):
             return VRM1Meta(self.VRMC_vrm["meta"])
         return None
 
-
-class VRMReader(GLBReader):
-    def parse_json_chunk(self) -> VRMJsonChunk:
-        return VRMJsonChunk(super().parse_json_chunk())
-
     @property
-    def thumbnail(self) -> Image | None:
-        json = self.parse_json_chunk()
-        if json.vrm0meta is not None:
-            texture_id = json.vrm0meta["texture"]
-            image_id = json["textures"][texture_id]["source"]
-            return self.images[image_id]
-        if json.vrm1meta is not None:
-            if "thumbnailImage" not in json.vrm1meta:
+    def thumbnail(self):
+        if self.vrm0meta is not None:
+            texture_id = self.vrm0meta["texture"]
+            return self.textures[texture_id].source
+        if self.vrm1meta is not None:
+            if "thumbnailImage" not in self.vrm1meta:
                 return None
-            image_id = json.vrm1meta["thumbnailImage"]
+            image_id = self.vrm1meta["thumbnailImage"]
             return self.images[image_id]
         return None
