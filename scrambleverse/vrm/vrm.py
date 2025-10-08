@@ -1,6 +1,8 @@
 from ..gltf import GLBReader
 from .vrm0_meta import VRM0Meta
 from .vrm1_meta import VRM1Meta
+from ..gltf import ImageWithMIME
+from typing import cast, Optional
 
 
 class VRMReader(GLBReader):
@@ -28,10 +30,10 @@ class VRMReader(GLBReader):
     def thumbnail(self):
         if self.vrm0meta is not None:
             texture_id = self.vrm0meta["texture"]
-            return self.textures[texture_id].source
+            return cast(ImageWithMIME, self.textures[texture_id].source)
         if self.vrm1meta is not None:
             if "thumbnailImage" not in self.vrm1meta:
                 return None
             image_id = self.vrm1meta["thumbnailImage"]
-            return self.images[image_id]
+            return cast(ImageWithMIME, self.images[image_id])
         return None
