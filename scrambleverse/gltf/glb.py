@@ -11,7 +11,6 @@ from typing import NamedTuple, Literal, cast
 from functools import cached_property, cache
 import json
 import os
-import io
 
 __all__ = ["GLBReader", "GLBHeader", "GLBChunk"]
 

@@ -2,7 +2,7 @@ from ..gltf import GLBReader
 from .vrm0_meta import VRM0Meta
 from .vrm1_meta import VRM1Meta
 from ..gltf import ImageWithMIME
-from typing import cast, Optional
+from typing import cast
 
 
 class VRMReader(GLBReader):

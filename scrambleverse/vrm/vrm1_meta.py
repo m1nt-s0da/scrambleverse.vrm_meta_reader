@@ -1,6 +1,5 @@
 from typing import TypedDict, Literal
 
-
 __all__ = ["VRM1Meta"]
 
 

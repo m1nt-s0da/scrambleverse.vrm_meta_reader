@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING
 from ..closable import OnceClosable
 from .resource_opener import ResourceOpener, ClosableMemoryReaderView
 from ..memory_reader import MemoryReaderView

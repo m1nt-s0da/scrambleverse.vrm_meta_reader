@@ -3,7 +3,6 @@ from .slice import MemoryReaderViewSlice
 from .bytes import MemoryReaderSourceBytes
 from ..closable import OnceClosable
 from .mmap import MemoryReaderSourceMmap
-import io
 import os
 
 __all__ = ["MemoryReader"]

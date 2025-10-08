@@ -1,8 +1,6 @@
 import sys
 import mmap
-import io
 import os
-from threading import Lock
 
 __all__ = ["MemoryReaderSourceMmap"]
 
