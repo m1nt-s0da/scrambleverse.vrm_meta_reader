@@ -1,17 +1,28 @@
-from ..closable import OnceClosable
 from ..memory_reader import MemoryReaderView
 from typing import TYPE_CHECKING
 from .resource_opener import ResourceOpener, ClosableMemoryReaderView
+from typing import Protocol
 
 if TYPE_CHECKING:
     from .gltf import GLTFReader
 
-__all__ = ["Buffers"]
+__all__ = ["Buffer", "URIBuffer", "Buffers"]
 
 
-class Buffers(OnceClosable):
-    __cache: dict[int, ClosableMemoryReaderView | MemoryReaderView] = {}
+class Buffer(Protocol):
+    def open(self) -> ClosableMemoryReaderView | MemoryReaderView: ...
 
+
+class URIBuffer(Buffer):
+    def __init__(self, resource_opener: ResourceOpener, uri: str) -> None:
+        self.__resource_opener = resource_opener
+        self.__uri = uri
+
+    def open(self) -> ClosableMemoryReaderView | MemoryReaderView:
+        return self.__resource_opener.open_uri(self.__uri)
+
+
+class Buffers:
     def __init__(
         self,
         reader: "GLTFReader",
@@ -29,20 +40,11 @@ class Buffers(OnceClosable):
     def __len__(self) -> int:
         return len(self._gltf_data)
 
-    def __getitem__(self, index: int) -> MemoryReaderView:
-        if index in self.__cache:
-            return self.__cache[index]
-
+    def __getitem__(self, index: int) -> Buffer:
         buffers = self._gltf_data
         buf = buffers[index]
-        if "uri" in buf:
-            self.__cache[index] = self.__resource_opener.open_uri(buf["uri"])
-        else:
-            default_buffer_index = len([x for x in buffers[:index] if "uri" not in x])
-            self.__cache[index] = self.__reader._default_buffer(default_buffer_index)
-        return self.__cache[index]
 
-    def _close(self):
-        for buf in self.__cache.values():
-            if isinstance(buf, ClosableMemoryReaderView):
-                buf.close()
+        if "uri" not in buf:
+            raise IndexError("Only buffers with URI are supported")
+
+        return URIBuffer(self.__resource_opener, buf["uri"])

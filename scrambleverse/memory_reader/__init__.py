@@ -3,3 +3,4 @@ from .reader import *
 from .slice import *
 from .bytes import *
 from .mmap import *
+from .file import *

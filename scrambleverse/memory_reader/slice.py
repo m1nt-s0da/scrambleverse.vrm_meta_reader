@@ -1,4 +1,4 @@
-from .protocol import MemoryReaderView, MemoryReaderSource
+from .protocol import MemoryReaderView, MemoryReaderSource, MemoryReaderRegion
 
 __all__ = ["MemoryReaderViewSlice"]
 
@@ -24,26 +24,22 @@ class MemoryReaderViewSlice:
     def _key(self) -> slice:
         return self.__key
 
-    def indices(self) -> slice:
-        parent_slice = self.__parent.indices()
-        assert parent_slice.step is None or parent_slice.step == 1
-        parent_slice_length = parent_slice.stop - parent_slice.start
-        self_slice = slice(*self.__key.indices(parent_slice_length))
-        return slice(
-            parent_slice.start + self_slice.start,
-            parent_slice.start + self_slice.stop,
-        )
+    def indices(self) -> MemoryReaderRegion:
+        parent_indices = self.__parent.indices()
+        [start, stop, step] = self.__key.indices(parent_indices.size)
+        assert step == 1
+        return parent_indices.inset(start, stop - start)
 
     def __len__(self) -> int:
-        indices = self.indices()
-        return indices.stop - indices.start
+        return self.indices().size
 
     def __bytes__(self) -> bytes:
         indices = self.indices()
-        return self.source[indices]
+        return self.source.read(indices.offset, indices.size)
 
     def __getitem__(self, key: slice) -> MemoryReaderView:
         return MemoryReaderViewSlice(self, key)
 
     def __repr__(self) -> str:
-        return f"<{type(self).__name__} {self.indices()}>"
+        indices = self.indices()
+        return f"<{type(self).__name__} offset={indices.offset} size={indices.size} source={self.source}>"

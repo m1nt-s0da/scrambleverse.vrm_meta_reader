@@ -1,6 +1,7 @@
 from .data import GLTFBufferView
-from ..memory_reader import MemoryReaderView
-from typing import TYPE_CHECKING, NamedTuple
+from ..memory_reader import MemoryReaderView, MemoryReaderRegion
+from typing import TYPE_CHECKING
+from .buffer import Buffer
 
 if TYPE_CHECKING:
     from .gltf import GLTFReader
@@ -8,9 +9,28 @@ if TYPE_CHECKING:
 __all__ = ["BufferView", "BufferViews"]
 
 
-class BufferView(NamedTuple):
-    view: MemoryReaderView
-    target: int | None
+class BufferView:
+    def __init__(
+        self, buffer: Buffer, region: MemoryReaderRegion, target: int | None
+    ) -> None:
+        self.__buffer = buffer
+        self.__region = region
+        self.__target = target
+
+    @property
+    def buffer(self) -> Buffer:
+        return self.__buffer
+
+    @property
+    def region(self) -> MemoryReaderRegion:
+        return self.__region
+
+    @property
+    def target(self) -> int | None:
+        return self.__target
+
+    def open(self) -> MemoryReaderView:
+        return self.__buffer.open()[self.__region.slice]
 
 
 class BufferViews:
@@ -28,8 +48,10 @@ class BufferViews:
         buf_view: GLTFBufferView = self._gltf_data[index]
         offset = buf_view.get("byteOffset", 0)
         return BufferView(
-            self.__reader.buffers[buf_view["buffer"]][
-                offset : offset + buf_view["byteLength"]
-            ],
+            self.__reader.buffers[buf_view["buffer"]],
+            MemoryReaderRegion(
+                offset,
+                buf_view["byteLength"],
+            ),
             buf_view.get("target", None),
         )

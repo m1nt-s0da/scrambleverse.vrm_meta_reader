@@ -1,11 +1,10 @@
 from .data import GLTFData
 from .buffer import Buffers
 from .buffer_view import BufferViews
-from ..memory_reader import MemoryReaderView
 from ..closable import OnceClosable
 from pathlib import Path
 import os
-from .resource_opener import ResourceOpener, ClosableMemoryReaderView
+from .resource_opener import ResourceOpener
 from .image import Images
 from abc import ABC, abstractmethod
 import json
@@ -41,22 +40,43 @@ class GLTFReader(OnceClosable, ABC):
 
         resource_opener = resource_opener or ResourceOpener()
 
-        self.__buffers = Buffers(self, resource_opener=resource_opener)
         self.__buffer_views = BufferViews(self)
         self.__images = Images(self, resource_opener=resource_opener)
         self.__textures = Textures(self)
+        self.__resource_opener = resource_opener
+
+    @property
+    def _resource_opener(self) -> ResourceOpener:
+        return self.__resource_opener
 
     @property
     @abstractmethod
     def _gltf_data(self) -> GLTFData: ...
 
-    def _default_buffer(
-        self, index: int
-    ) -> ClosableMemoryReaderView | MemoryReaderView:
-        raise ValueError("No default buffer available.")
+    def _do_close(self):
+        pass
 
-    def _close(self):
-        self.buffers.close()
+    @property
+    def buffers(self):
+        return Buffers(self, resource_opener=self._resource_opener)
+
+    @property
+    def buffer_views(self):
+        return self.__buffer_views
+
+    @property
+    def images(self):
+        return self.__images
+
+    @property
+    def samplers(self):
+        return self._gltf_data.get("samplers", [])
+
+    @property
+    def textures(self):
+        return self.__textures
+
+    # region openers
 
     @classmethod
     def from_bytes(
@@ -80,25 +100,7 @@ class GLTFReader(OnceClosable, ABC):
         with open(file_path, "rb") as file:
             return cls.from_file(file, resource_opener=resource_opener)
 
-    @property
-    def buffers(self):
-        return self.__buffers
-
-    @property
-    def buffer_views(self):
-        return self.__buffer_views
-
-    @property
-    def images(self):
-        return self.__images
-
-    @property
-    def samplers(self):
-        return self._gltf_data.get("samplers", [])
-
-    @property
-    def textures(self):
-        return self.__textures
+    # endregion
 
 
 class GLTFReaderImpl(GLTFReader):

@@ -1,6 +1,6 @@
 from typing import TypedDict, Literal
 
-__all__ = ["VRM1Meta"]
+__all__ = ["VRM1Meta", "VRM1Extension"]
 
 
 class VRM1MetaRequired(TypedDict):
@@ -28,3 +28,7 @@ class VRM1Meta(VRM1MetaRequired, total=False):
         "prohibited", "allowModification", "allowModificationRedistribution"
     ]
     otherLicenseUrl: str
+
+
+class VRM1Extension(TypedDict):
+    meta: VRM1Meta

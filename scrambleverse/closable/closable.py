@@ -1,12 +1,13 @@
 from abc import ABC, abstractmethod
 from threading import Lock
+from typing import final
 
 __all__ = ["OnceClosable"]
 
 
 class OnceClosable(ABC):
     @abstractmethod
-    def _close(self):
+    def _do_close(self):
         """Close the resource."""
         ...
 
@@ -17,6 +18,7 @@ class OnceClosable(ABC):
     def _closed(self) -> bool:
         return self.__closed
 
+    @final
     def close(self):
         closing = False
         with self.__closing:
@@ -24,7 +26,7 @@ class OnceClosable(ABC):
                 self.__closed = True
                 closing = True
         if closing:
-            self._close()
+            self._do_close()
 
     def __enter__(self):
         with self.__closing:

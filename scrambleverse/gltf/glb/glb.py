@@ -1,16 +1,13 @@
-from ..memory_reader import (
+from ...memory_reader import (
     MemoryReader,
-    MemoryReaderSource,
     MemoryReaderView,
-    MemoryReaderSourceBytes,
-    MemoryReaderSourceMmap,
 )
-from .gltf import GLTFReader, ResourceOpener
-from .data import GLTFData
+from ..gltf import GLTFReader, ResourceOpener
+from ..data import GLTFData
 from typing import NamedTuple, Literal, cast
-from functools import cached_property, cache
 import json
 import os
+from .buffer import GLBBuffers
 
 __all__ = ["GLBReader", "GLBHeader", "GLBChunk"]
 
@@ -29,38 +26,39 @@ class GLBChunk(NamedTuple):
 class GLBReader(GLTFReader):
     def __init__(
         self,
-        source: MemoryReaderSource,
+        reader: MemoryReader,
         *,
         resource_opener: ResourceOpener | None = None,
     ) -> None:
-        GLTFReader.__init__(self, resource_opener=resource_opener)
+        super().__init__(resource_opener=resource_opener)
 
-        self.__file = MemoryReader(source)
+        self.__file = reader
 
-    @cached_property
+    @property
     def header(self) -> GLBHeader:
+        data = bytes(self.__file[0:12])
         return GLBHeader(
-            magic=bytes(self.__file[0:4]),
-            version=int.from_bytes(self.__file[4:8], "little"),
-            length=int.from_bytes(self.__file[8:12], "little"),
+            magic=data[0:4],
+            version=int.from_bytes(data[4:8], "little"),
+            length=int.from_bytes(data[8:12], "little"),
         )
 
-    @cached_property
+    @property
     def chunks(self):
         def gen():
             offset = 12
             while offset < self.header.length:
-                chunk_length = int.from_bytes(
-                    self.__file[offset : offset + 4], "little"
-                )
-                chunk_type = bytes(self.__file[offset + 4 : offset + 8])
+                header = bytes(self.__file[offset : offset + 8])
+                chunk_length = int.from_bytes(header[0:4], "little")
+                chunk_type = header[4:8]
+
                 chunk_data = self.__file[offset + 8 : offset + 8 + chunk_length]
                 yield GLBChunk(cast(Literal[b"JSON", b"BIN\0"], chunk_type), chunk_data)
                 offset += 8 + chunk_length
 
         return list(gen())
 
-    @cached_property
+    @property
     def __gltf_data(self) -> GLTFData:
         return json.loads(bytes(self.json_chunk))
 
@@ -68,14 +66,14 @@ class GLBReader(GLTFReader):
     def _gltf_data(self):
         return self.__gltf_data
 
-    @cached_property
+    @property
     def json_chunk(self):
         for chunk_type, chunk_data in self.chunks:
             if chunk_type == b"JSON":
                 return chunk_data
         raise ValueError("No JSON chunk found")
 
-    @cached_property
+    @property
     def bin_chunks(self):
         return [
             chunk_data
@@ -83,27 +81,37 @@ class GLBReader(GLTFReader):
             if chunk_type == b"BIN\0"
         ]
 
+    @property
+    def buffers(self):
+        return GLBBuffers(self, resource_opener=self._resource_opener)
+
     def _default_buffer(self, index: int):
         return self.bin_chunks[index]
 
-    def _close(self):
-        GLTFReader._close(self)
+    def _do_close(self):
+        super()._do_close()
         self.__file.close()
 
+    # region openers
+
     @classmethod
-    def from_bytes(
-        cls, data: bytes, *, resource_opener: ResourceOpener | None = None
-    ) -> "GLBReader":
-        return cls(MemoryReaderSourceBytes(data), resource_opener=resource_opener)
+    def from_bytes(cls, data: bytes, *, resource_opener: ResourceOpener | None = None):
+        return cls(MemoryReader.from_bytes(data), resource_opener=resource_opener)
 
     @classmethod
     def open_file(
         cls,
         file_path: str | os.PathLike,
         *,
+        use_mmap: bool = True,
         resource_opener: ResourceOpener | None = None,
     ):
         return cls(
-            MemoryReaderSourceMmap(file_path),
+            MemoryReader.open_file(file_path, use_mmap=use_mmap),
             resource_opener=resource_opener,
         )
+
+    # endregion
+
+    def __repr__(self) -> str:
+        return f"<{type(self).__name__} reader={self.__file}>"
