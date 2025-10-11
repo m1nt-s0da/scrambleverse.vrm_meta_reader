@@ -29,10 +29,12 @@ class GLBReader(GLTFReader):
         reader: BinaryReader,
         *,
         resource_opener: ResourceOpener | None = None,
+        auto_close: bool = False,
     ) -> None:
         super().__init__(resource_opener=resource_opener)
 
         self.__file = reader
+        self.__auto_close = auto_close
 
     @property
     def header(self) -> GLBHeader:
@@ -90,13 +92,18 @@ class GLBReader(GLTFReader):
 
     def _do_close(self):
         super()._do_close()
-        self.__file.close()
+        if self.__auto_close:
+            self.__file.close()
 
     # region openers
 
     @classmethod
     def from_bytes(cls, data: bytes, *, resource_opener: ResourceOpener | None = None):
-        return cls(BinaryReader.from_bytes(data), resource_opener=resource_opener)
+        return cls(
+            BinaryReader.from_bytes(data),
+            resource_opener=resource_opener,
+            auto_close=True,
+        )
 
     @classmethod
     def open_file(
@@ -109,6 +116,7 @@ class GLBReader(GLTFReader):
         return cls(
             BinaryReader.open_file(file_path, use_mmap=use_mmap),
             resource_opener=resource_opener,
+            auto_close=True,
         )
 
     # endregion

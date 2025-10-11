@@ -53,16 +53,18 @@ class BinaryReader(OnceClosable):
     @classmethod
     def from_bytes(cls, data: bytes | bytearray | memoryview, auto_close=False):
         if isinstance(data, memoryview):
-            return cls(BinaryBytesSourceReadonly(data, auto_close=auto_close))
+            return cls(
+                BinaryBytesSourceReadonly(data, auto_close=auto_close), auto_close=True
+            )
         else:
-            return cls(BinaryBytesSourceReadonly(data))
+            return cls(BinaryBytesSourceReadonly(data), auto_close=True)
 
     @classmethod
     def open_file(cls, file_path: str | os.PathLike, *, use_mmap: bool = True):
         if use_mmap:
-            return cls(BinaryMmapSourceReadonly.open(file_path))
+            return cls(BinaryMmapSourceReadonly.open(file_path), auto_close=True)
         else:
-            return cls(BinaryFileSourceReadonly.open(file_path))
+            return cls(BinaryFileSourceReadonly.open(file_path), auto_close=True)
 
     def __repr__(self) -> str:
         return f"<{type(self).__name__} source={self.__source}>"
