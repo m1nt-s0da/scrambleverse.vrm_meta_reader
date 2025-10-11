@@ -1,13 +1,13 @@
-from ...memory_reader import (
-    MemoryReader,
-    MemoryReaderView,
+from ...binary import (
+    BinaryReader,
+    BinaryReadonlyView,
 )
-from ..gltf import GLTFReader, ResourceOpener
-from ..data import GLTFData
+from .._gltf import GLTFReader, ResourceOpener
+from .._data import GLTFData
 from typing import NamedTuple, Literal, cast
 import json
 import os
-from .buffer import GLBBuffers
+from ._buffer import GLBBuffers
 
 __all__ = ["GLBReader", "GLBHeader", "GLBChunk"]
 
@@ -20,13 +20,13 @@ class GLBHeader(NamedTuple):
 
 class GLBChunk(NamedTuple):
     type: Literal[b"JSON", b"BIN\0"]
-    data: MemoryReaderView
+    data: BinaryReadonlyView
 
 
 class GLBReader(GLTFReader):
     def __init__(
         self,
-        reader: MemoryReader,
+        reader: BinaryReader,
         *,
         resource_opener: ResourceOpener | None = None,
     ) -> None:
@@ -96,7 +96,7 @@ class GLBReader(GLTFReader):
 
     @classmethod
     def from_bytes(cls, data: bytes, *, resource_opener: ResourceOpener | None = None):
-        return cls(MemoryReader.from_bytes(data), resource_opener=resource_opener)
+        return cls(BinaryReader.from_bytes(data), resource_opener=resource_opener)
 
     @classmethod
     def open_file(
@@ -107,7 +107,7 @@ class GLBReader(GLTFReader):
         resource_opener: ResourceOpener | None = None,
     ):
         return cls(
-            MemoryReader.open_file(file_path, use_mmap=use_mmap),
+            BinaryReader.open_file(file_path, use_mmap=use_mmap),
             resource_opener=resource_opener,
         )
 

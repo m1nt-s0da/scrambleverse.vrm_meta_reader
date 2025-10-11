@@ -1,9 +1,11 @@
 from typing import TYPE_CHECKING, NamedTuple
-from .data import GLTFSampler
-from .image import Image
+from ._data import GLTFSampler
+from ._image import Image
 
 if TYPE_CHECKING:
-    from .gltf import GLTFReader
+    from ._gltf import GLTFReader
+
+__all__ = ["Texture", "Textures"]
 
 
 class Texture(NamedTuple):

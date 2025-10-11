@@ -1,7 +1,7 @@
 from typing import Literal
 import os
 from pathlib import Path
-from ..memory_reader import MemoryReader, MemoryReaderView
+from ..binary import BinaryReader, BinaryReadonlyView
 from typing import Protocol, runtime_checkable
 from ..datauri import parse_data_uri
 
@@ -28,7 +28,7 @@ def path_outside(base: str | os.PathLike, target: str | os.PathLike) -> bool:
 
 
 @runtime_checkable
-class ClosableMemoryReaderView(MemoryReaderView, Protocol):
+class ClosableMemoryReaderView(BinaryReadonlyView, Protocol):
     def close(self): ...
 
 
@@ -41,7 +41,7 @@ class ResourceOpener:
         self.__relative_file_buffer = relative_file_buffer
         self.__relative_file_location = Path(relative_file_location or ".")
 
-    def open_uri(self, uri: str) -> ClosableMemoryReaderView | MemoryReaderView:
+    def open_uri(self, uri: str) -> ClosableMemoryReaderView | BinaryReadonlyView:
         if ":" in uri and not os.path.isabs(uri):
             if uri.startswith("data:"):
                 return self._parse_datauri(uri)
@@ -65,15 +65,15 @@ class ResourceOpener:
 
     def _open_file(
         self, path: str | os.PathLike
-    ) -> ClosableMemoryReaderView | MemoryReaderView:
-        return MemoryReader.open_file(path)
+    ) -> ClosableMemoryReaderView | BinaryReadonlyView:
+        return BinaryReader.open_file(path)
 
-    def _parse_datauri(self, uri: str) -> ClosableMemoryReaderView | MemoryReaderView:
-        return MemoryReader.from_bytes(parse_data_uri(uri).data)
+    def _parse_datauri(self, uri: str) -> ClosableMemoryReaderView | BinaryReadonlyView:
+        return BinaryReader.from_bytes(parse_data_uri(uri).data)
 
-    def _fetch(self, uri: str) -> ClosableMemoryReaderView | MemoryReaderView:
+    def _fetch(self, uri: str) -> ClosableMemoryReaderView | BinaryReadonlyView:
         import requests
 
         response = requests.get(uri)
         response.raise_for_status()
-        return MemoryReader.from_bytes(response.content)
+        return BinaryReader.from_bytes(response.content)

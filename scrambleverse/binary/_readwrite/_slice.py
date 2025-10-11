@@ -1,30 +1,31 @@
-from .protocol import MemoryReaderView, MemoryReaderSource, MemoryReaderRegion
+from ._protocol import BinaryReaderWriterView, BytesRegion
+from ..source import BinarySourceReadonly, BinaryWriteData
 
-__all__ = ["MemoryReaderViewSlice"]
+__all__ = ["BinaryReaderWriterViewSlice"]
 
 
-class MemoryReaderViewSlice:
-    __parent: MemoryReaderView
+class BinaryReaderWriterViewSlice:
+    __parent: BinaryReaderWriterView
     __key: slice
 
-    def __init__(self, parent: MemoryReaderView, key: slice) -> None:
+    def __init__(self, parent: BinaryReaderWriterView, key: slice) -> None:
         assert key.step is None or key.step == 1
         self.__parent = parent
         self.__key = key
 
     @property
-    def source(self) -> MemoryReaderSource:
+    def source(self):
         return self.__parent.source
 
     @property
-    def parent(self) -> MemoryReaderView:
+    def parent(self) -> BinaryReaderWriterView:
         return self.__parent
 
     @property
     def _key(self) -> slice:
         return self.__key
 
-    def indices(self) -> MemoryReaderRegion:
+    def indices(self) -> BytesRegion:
         parent_indices = self.__parent.indices()
         [start, stop, step] = self.__key.indices(parent_indices.size)
         assert step == 1
@@ -37,8 +38,15 @@ class MemoryReaderViewSlice:
         indices = self.indices()
         return self.source.read(indices.offset, indices.size)
 
-    def __getitem__(self, key: slice) -> MemoryReaderView:
-        return MemoryReaderViewSlice(self, key)
+    def __getitem__(self, key: slice) -> BinaryReaderWriterView:
+        return BinaryReaderWriterViewSlice(self, key)
+
+    def __setitem__(self, key: slice, value: BinaryWriteData) -> None:
+        indices = self.indices()
+        [start, stop, step] = key.indices(indices.size)
+        assert step == 1
+        assert (stop - start) == len(value)
+        self.source.write(indices.offset + start, value)
 
     def __repr__(self) -> str:
         indices = self.indices()

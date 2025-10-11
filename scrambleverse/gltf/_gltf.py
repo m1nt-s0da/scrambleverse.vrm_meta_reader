@@ -1,15 +1,15 @@
-from .data import GLTFData
-from .buffer import Buffers
-from .buffer_view import BufferViews
+from ._data import GLTFData
+from ._buffer import Buffers
+from ._buffer_view import BufferViews
 from ..closable import OnceClosable
 from pathlib import Path
 import os
-from .resource_opener import ResourceOpener
-from .image import Images
+from ._resource_opener import ResourceOpener
+from ._image import Images
 from abc import ABC, abstractmethod
 import json
 import io
-from .texture import Textures
+from ._texture import Textures
 
 __all__ = ["GLTFReader"]
 

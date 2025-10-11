@@ -1,20 +1,20 @@
 from typing import TYPE_CHECKING
-from ..resource_opener import ResourceOpener
-from ..buffer import Buffer, Buffers
-from ...memory_reader import MemoryReaderView
+from .._resource_opener import ResourceOpener
+from .._buffer import Buffer, Buffers
+from ...binary import BinaryReadonlyView
 
 
 if TYPE_CHECKING:
-    from .glb import GLBReader
+    from ._glb import GLBReader
 
 __all__ = ["GLBBuffers", "GLBBuffer"]
 
 
 class GLBBuffer(Buffer):
-    def __init__(self, data: MemoryReaderView) -> None:
+    def __init__(self, data: BinaryReadonlyView) -> None:
         self.__data = data
 
-    def open(self) -> MemoryReaderView:
+    def open(self) -> BinaryReadonlyView:
         return self.__data
 
 

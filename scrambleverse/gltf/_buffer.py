@@ -1,16 +1,16 @@
-from ..memory_reader import MemoryReaderView
+from ..binary import BinaryReadonlyView
 from typing import TYPE_CHECKING
-from .resource_opener import ResourceOpener, ClosableMemoryReaderView
+from ._resource_opener import ResourceOpener, ClosableMemoryReaderView
 from typing import Protocol
 
 if TYPE_CHECKING:
-    from .gltf import GLTFReader
+    from ._gltf import GLTFReader
 
 __all__ = ["Buffer", "URIBuffer", "Buffers"]
 
 
 class Buffer(Protocol):
-    def open(self) -> ClosableMemoryReaderView | MemoryReaderView: ...
+    def open(self) -> ClosableMemoryReaderView | BinaryReadonlyView: ...
 
 
 class URIBuffer(Buffer):
@@ -18,7 +18,7 @@ class URIBuffer(Buffer):
         self.__resource_opener = resource_opener
         self.__uri = uri
 
-    def open(self) -> ClosableMemoryReaderView | MemoryReaderView:
+    def open(self) -> ClosableMemoryReaderView | BinaryReadonlyView:
         return self.__resource_opener.open_uri(self.__uri)
 
 

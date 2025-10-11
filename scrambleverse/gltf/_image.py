@@ -1,16 +1,16 @@
 from typing import TYPE_CHECKING, Protocol
-from .resource_opener import ResourceOpener
-from ..memory_reader import MemoryReaderView
-from .buffer_view import BufferView
+from ._resource_opener import ResourceOpener
+from ..binary import BinaryReadonlyView
+from ._buffer_view import BufferView
 
 if TYPE_CHECKING:
-    from .gltf import GLTFReader
+    from ._gltf import GLTFReader
 
 __all__ = ["Images", "Image", "ImageWithURI", "ImageBufferView"]
 
 
 class Image(Protocol):
-    def open(self) -> MemoryReaderView: ...
+    def open(self) -> BinaryReadonlyView: ...
 
 
 class ImageWithURI(Image):
@@ -23,7 +23,7 @@ class ImageWithURI(Image):
     def uri(self) -> str:
         return self.__uri
 
-    def open(self) -> MemoryReaderView:
+    def open(self) -> BinaryReadonlyView:
         return self.resource_opener.open_uri(self.__uri)
 
 
@@ -37,7 +37,7 @@ class ImageBufferView(Image):
     def mime_type(self) -> str:
         return self.__mime_type
 
-    def open(self) -> MemoryReaderView:
+    def open(self) -> BinaryReadonlyView:
         return self.__view.open()
 
 
