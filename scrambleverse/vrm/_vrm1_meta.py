@@ -6,7 +6,7 @@ __all__ = ["VRM1Meta", "VRM1Extension"]
 class VRM1MetaRequired(TypedDict):
     name: str
     authors: list[str]
-    licenseUrl: list[str]
+    licenseUrl: str
 
 
 class VRM1Meta(VRM1MetaRequired, total=False):
